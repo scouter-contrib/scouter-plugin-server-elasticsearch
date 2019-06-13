@@ -10,23 +10,27 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
+import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.bulk.BulkProcessor;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.GetIndexRequest;
 import org.elasticsearch.common.unit.ByteSizeUnit;
 import org.elasticsearch.common.unit.ByteSizeValue;
 import org.elasticsearch.common.unit.TimeValue;
 import scouter.server.Configure;
 import scouter.server.Logger;
+import scouter.util.DateUtil;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 /**
@@ -146,8 +150,48 @@ public class HttpClient {
         this.bulkProcessor.flush();
     }
 
-    public void deleteIndex(List<String> strings, int esIndexDuration) {
+    public void deleteIndex(List<String> indexPattern, int esIndexDuration) {
 
 
+        final int _start = esIndexDuration * 2; // before endDay
+        final int _end   = esIndexDuration; // total counter;
+        final Calendar cal = GregorianCalendar.getInstance();
+        IntStream.iterate(_start, n -> n-1 )
+                .limit(_end)
+                .mapToObj(x ->{
+                    // 현재 기준 이전 날짜를 가져오기
+                    cal.add(5, x > 0 ? (x * -1) : x);
+                   return cal.getTime().getTime();
+                })
+                .map(_ts -> DateUtil.format(_ts,"yyyy-MM-dd"))
+                .collect(Collectors.toList())
+                .stream()
+                .map(_day -> {
+                    List<String> pattern = new ArrayList<>();
+                    for(String pt :  indexPattern) {
+                        pattern.add(String.join("", pt, "*", _day, "*"));
+                    }
+                    return pattern;
+                } )
+                .flatMap(List::stream)
+                .forEach(_indexName ->{
+                    try {
+
+                        GetIndexRequest getRequest = new GetIndexRequest(_indexName);
+                        DeleteIndexRequest delRequest = new DeleteIndexRequest(_indexName);
+
+                        if(this.highLevelClient.indices().exists(getRequest, RequestOptions.DEFAULT)) {
+                            AcknowledgedResponse acknowledgedResponse= this.highLevelClient.indices().delete(delRequest,RequestOptions.DEFAULT);
+                            if(acknowledgedResponse.isAcknowledged()){
+                                Logger.println("index pattern delete : success",_indexName);
+                            }
+
+                        }
+                    }catch (Throwable e){
+                        Logger.printStackTrace("ES-DELETE-ERROR", e);
+                    }
+                });
     }
+
+
 }
