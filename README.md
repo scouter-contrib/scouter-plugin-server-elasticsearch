@@ -30,3 +30,9 @@ Refer to [pom.xml](./pom.xml)
     
 ### Deploy
  - target에 생성되는 scouter-plugin-server-elasticsearch-x.x.x.jar 와 target/lib에 생성되는 전체 library를 scouter sever의 lib 디렉토리에 저장하고 scouter server를 재시작한다
+### Support Scouter Version
+ - 2.0.x 이상  
+### Support ElasticSearch Version
+ - 7.0.1 
+  
+ 
