@@ -1,5 +1,5 @@
 # scouter-plugin-server-elasticsearch
-###Scouter server plugin for an elasticsearch one of the time seriesedb.
+                                              
 ![Korean](https://img.shields.io/badge/language-Korean-blue.svg)
 
 - Scouter Server Plugin으로 성능 counter 정보를 ElasticSearch 로 전송해 주는 plugin 이다.
