@@ -1,9 +1,7 @@
 # scouter-plugin-server-elasticsearch
                                               
 ![Korean](https://img.shields.io/badge/language-Korean-blue.svg)
-
-- Scouter Server Plugin으로 성능 counter 정보를 ElasticSearch 로 전송해 주는 plugin 이다.
-- ElasticSearch 버전과 매칭을 하여 빌드 한다.     
+- Scouter Server Plugin으로 성능 counter 정보 와 XLOG 정보를 ElasticSearch 로 전송해 주는 plugin 이다.  
 
 ### configuration (스카우터 서버 설치 경로 하위의 conf/scouter.conf)
 #### 기본 설정
