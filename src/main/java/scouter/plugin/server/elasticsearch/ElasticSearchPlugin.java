@@ -13,41 +13,37 @@ import scouter.server.CounterManager;
 import scouter.server.Logger;
 import scouter.server.core.AgentManager;
 import scouter.server.plugin.PluginHelper;
-import scouter.util.DateUtil;
-import scouter.util.HashUtil;
-import scouter.util.StringUtil;
+import scouter.util.*;
 
 import java.util.*;
 
 /**
  * @author Heo Yeo Song (yosong.heo@gmail.com) on 2019. 6. 13.
  */
-public class ElasticSearchPlugin extends TimerTask {
+public class ElasticSearchPlugin {
 
     private final HttpClient httpClient;
     Configure conf = Configure.getInstance();
 
-    private static final String ext_plugin_es_enabled = "ext_plugin_es_enabled";
-    private static final String ext_plugin_es_index = "ext_plugin_es_index";
+    private static final String ext_plugin_es_enabled           = "ext_plugin_es_enabled";
+    private static final String ext_plugin_es_counter_index     = "ext_plugin_es_counter_index";
+    private static final String ext_plugin_es_xlog_index        = "ext_plugin_es_xlog_index";
+    private static final String ext_plugin_ex_duration_day      = "ext_plugin_ex_duration_day";
 
-    private static final String ext_plugin_es_https_enabled = "ext_plugin_es_https_enabled";
-    private static final String ext_plugin_es_cluster_address     = "ext_plugin_es_cluster_address";
+    private static final String ext_plugin_es_https_enabled     = "ext_plugin_es_https_enabled";
+    private static final String ext_plugin_es_cluster_address   = "ext_plugin_es_cluster_address";
 
-    private static final String ext_plugin_es_id = "ext_plugin_es_id";
-    private static final String ext_plugin_es_password = "ext_plugin_es_password";
+    private static final String ext_plugin_es_id                = "ext_plugin_es_id";
+    private static final String ext_plugin_es_password          = "ext_plugin_es_password";
 
-
-
-    private static final String tagObjName = "obj";
-    private static final String tagTimeTypeName = "timeType";
-    private static final String tagObjType = "objType";
-    private static final String tagObjFamily = "objFamily";
 
 
     final PluginHelper helper       = PluginHelper.getInstance();
 
     boolean enabled                 = conf.getBoolean(ext_plugin_es_enabled, true);
-    private String esIndexName      = conf.getValue(ext_plugin_es_index, "scouter-counter");
+    private String esCouterIndexName      = conf.getValue(ext_plugin_es_counter_index, "scouter-counter");
+    private String esXlogIndexName      = conf.getValue(ext_plugin_es_xlog_index, "scouter-xlog");
+    private int esIndexDuration      = conf.getInt(ext_plugin_ex_duration_day, 90);
     boolean esIsHttpSecure          = conf.getBoolean(ext_plugin_es_https_enabled, false);
     String esHttpAddress            = conf.getValue(ext_plugin_es_cluster_address, "127.0.0.1:9200");
     String esUser                   = conf.getValue(ext_plugin_es_id, "");
@@ -65,12 +61,28 @@ public class ElasticSearchPlugin extends TimerTask {
         this.httpClient.init();
 
         Timer jobScheduler = new Timer(true);
-        jobScheduler.scheduleAtFixedRate(this, 1, 1000);
+
+        jobScheduler.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                httpClient.flush();
+            }
+        }, 1, DateTimeHelper.MILLIS_PER_SECOND);
+
+        Timer deleteScheduler = new Timer(true);
+        deleteScheduler.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                httpClient.deleteIndex(Arrays.asList(esCouterIndexName,esXlogIndexName),esIndexDuration);
+            }
+        }, 1, DateTimeHelper.MILLIS_PER_DAY);
 
         ConfObserver.put("ElasticPluginPlugin", new Runnable() {
             public void run() {
                 enabled                 = conf.getBoolean(ext_plugin_es_enabled, true);
-                esIndexName             = conf.getValue(ext_plugin_es_index, "scouter-counter");
+                esCouterIndexName       = conf.getValue(ext_plugin_es_counter_index, "scouter-counter");
+                esXlogIndexName         = conf.getValue(ext_plugin_es_xlog_index, "scouter-xlog");
+                esIndexDuration         = conf.getInt(ext_plugin_ex_duration_day, 90);
                 esIsHttpSecure          = conf.getBoolean(ext_plugin_es_https_enabled, false);
                 esHttpAddress           = conf.getValue(ext_plugin_es_cluster_address, "127.0.0.1:9200");
                 esUser                  = conf.getValue(ext_plugin_es_id, "");
@@ -85,10 +97,6 @@ public class ElasticSearchPlugin extends TimerTask {
         });
     }
 
-    @Override
-    public void run() {
-        this.httpClient.flush();
-    }
 
     @ServerPlugin(PluginConstants.PLUGIN_SERVER_COUNTER)
     public void counter(final PerfCounterPack pack) {
@@ -110,7 +118,7 @@ public class ElasticSearchPlugin extends TimerTask {
             Map<String,Object> _source = new LinkedHashMap<>();
 
             _source.put("bucket_time",new Date(pack.time));
-            _source.put("objHash",String.valueOf(objHash));
+            _source.put("objHash",Hexa32.toString32(objHash));
             _source.put("objName",objName);
             _source.put("objType",objType);
             _source.put("objFamily",objFamily);
@@ -125,13 +133,13 @@ public class ElasticSearchPlugin extends TimerTask {
                     continue;
                 }
                 String key = field.getKey();
-                if("time".equals(key)) {
+                if(Objects.equals("time",key) || Objects.equals("objHash",key)) {
                     continue;
                 }
                 _source.put(key,value);
             }
 
-            String _indexName = String.join("-",esIndexName.toLowerCase(), DateUtil.format(System.currentTimeMillis(),"yyyy-MM-dd"));
+            String _indexName = String.join("-",esCouterIndexName.toLowerCase(), DateUtil.format(System.currentTimeMillis(),"yyyy-MM-dd"));
             final int _id = HashUtil.hash(String.join("",
                                                             _indexName ,
                                                             String.valueOf(objHash) ,
@@ -156,20 +164,20 @@ public class ElasticSearchPlugin extends TimerTask {
             return;
         }
 
-
         Map<String,Object> _source = new LinkedHashMap<>();
 
         _source.put("bucket_time",new Date(p.endTime - p.elapsed));
         _source.put("endTime",new Date(p.endTime));
-        _source.put("raw_startTime",p.endTime - p.elapsed);
-        _source.put("raw_endTime",p.endTime);
-        _source.put("objHash",String.valueOf(p.objHash));
+        _source.put("start_time_number",p.endTime - p.elapsed);
+        _source.put("end_time_number",p.endTime);
+        _source.put("objHash",Hexa32.toString32(p.objHash));
         _source.put("service",this.getString(helper.getServiceString(p.service)));
         _source.put("threadName",this.getString(helper.getHashMsgString(p.threadNameHash)));
 
-        _source.put("txid",p.txid);
-        _source.put("caller",p.caller);
-        _source.put("gxid",p.gxid);
+        _source.put("txid",Hexa32.toString32(p.txid));
+        _source.put("caller",Hexa32.toString32(p.caller));
+        _source.put("gxid",Hexa32.toString32(p.gxid));
+
         _source.put("elapsed",p.elapsed);
         _source.put("error",this.getString(helper.getHashMsgString(p.error)));
         _source.put("cpu",p.cpu);
@@ -196,7 +204,8 @@ public class ElasticSearchPlugin extends TimerTask {
         _source.put("queuingTime",p.queuingTime);
         _source.put("queuing2ndHostHash",this.getString(helper.getHashMsgString(p.queuingHostHash)));
         _source.put("queuing2ndTime",p.queuing2ndTime);
-        String _indexName = String.join("-","scouter-xlog", DateUtil.format(System.currentTimeMillis(),"yyyy-MM-dd"));
+
+        String _indexName = String.join("-",esXlogIndexName, DateUtil.format(System.currentTimeMillis(),"yyyy-MM-dd"));
         final int _id = HashUtil.hash(String.join("",
                 _indexName ,
                 String.valueOf(p.txid) ,

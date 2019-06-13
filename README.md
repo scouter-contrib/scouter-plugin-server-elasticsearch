@@ -6,7 +6,9 @@
 ### configuration (스카우터 서버 설치 경로 하위의 conf/scouter.conf)
 #### 기본 설정
 * **ext_plugin_es_enabled** : 본 plugin 사용 여부 (default : true)
-* **ext_plugin_es_index** : elasticsearch index 명 (default : scouter-counter)
+* **ext_plugin_es_counter_index** : elasticsearch counter index 명 (default : scouter-counter)
+* **ext_plugin_es_xlog_index** :  elasticsearch xlog index 명 (default : scouter-xlog)
+* **ext_plugin_ex_duration_day** : elasticsearch index 저장 기간 (default : 90)
 
 
 #### http 방식 연동 여부 설정

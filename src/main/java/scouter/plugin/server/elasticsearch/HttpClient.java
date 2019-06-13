@@ -25,6 +25,7 @@ import scouter.server.Logger;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 
@@ -143,5 +144,10 @@ public class HttpClient {
 
     public void flush() {
         this.bulkProcessor.flush();
+    }
+
+    public void deleteIndex(List<String> strings, int esIndexDuration) {
+
+
     }
 }
