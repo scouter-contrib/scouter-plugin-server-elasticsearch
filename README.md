@@ -1,4 +1,5 @@
 # scouter-plugin-server-elasticsearch
+
                                               
 ![Korean](https://img.shields.io/badge/language-Korean-blue.svg)
 - Scouter Server Plugin으로 성능 counter 정보 와 XLOG 정보를 ElasticSearch 로 전송해 주는 plugin 이다.  
@@ -33,6 +34,14 @@ Refer to [pom.xml](./pom.xml)
 ### Support Scouter Version
  - 2.0.x 이상  
 ### Support ElasticSearch Version
- - 7.0.1 
-  
- 
+ - 7.0.1   
+### How To Kibana import 
+#### 1. 키바나 관리 메뉴로 이동 Saved Objects 클릭 후 Import를 클릭 한다.  
+![import1](./assert/import1.png)
+#### 2. 해당 프로젝트 export 폴더에서 kibana-scouter-dashboard.json 파일을 마우스로 import saved objects에 드래앤 드랍을 하면 잠시 후 로딩 성공 메시지를 확인 하고 OK 버튼을 누른다. 
+![import2](./assert/import2.png)
+[kibana-scouter-dashboard.json 다운로드](./export/kibana-scouter-dashboard.json)
+#### 4. 대시 보드 메뉴로 이동 XLOG Analysis Dashboard 찾아 클릭한다.  
+![dashboard](./assert/dashboard1.png)
+#### 5. 화면 결과  
+![dashboard](./assert/dashboard.png)
