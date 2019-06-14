@@ -6,12 +6,12 @@
       "title": "XLOG Analysis DashBoard [Scouter]",
       "hits": 0,
       "description": "",
-      "panelsJSON": "[{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"1\",\"w\":24,\"x\":0,\"y\":15},\"panelIndex\":\"1\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_0\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"2\",\"w\":24,\"x\":24,\"y\":0},\"panelIndex\":\"2\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_1\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"3\",\"w\":24,\"x\":0,\"y\":0},\"panelIndex\":\"3\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_2\"},{\"embeddableConfig\":{\"columns\":[\"objHash\",\"ipaddr\",\"service\",\"endTime\",\"elapsed\",\"gxid\",\"caller\",\"apicallCount\",\"apicallTime\",\"sqlCount\",\"sqlTime\",\"cpu\",\"queuingTime\"],\"sort\":[\"elapsed\",\"desc\"]},\"gridData\":{\"h\":13,\"i\":\"4\",\"w\":48,\"x\":0,\"y\":30},\"panelIndex\":\"4\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_3\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"6\",\"w\":24,\"x\":24,\"y\":15},\"panelIndex\":\"6\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_4\"}]",
+      "panelsJSON": "[{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"1\",\"w\":24,\"x\":0,\"y\":15},\"panelIndex\":\"1\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_0\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"2\",\"w\":24,\"x\":24,\"y\":0},\"panelIndex\":\"2\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_1\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"3\",\"w\":24,\"x\":0,\"y\":0},\"panelIndex\":\"3\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_2\"},{\"embeddableConfig\":{\"columns\":[\"objHash\",\"ipaddr\",\"service\",\"endTime\",\"elapsed\",\"gxid\",\"caller\",\"apicallCount\",\"apicallTime\",\"sqlCount\",\"sqlTime\",\"cpu\",\"queuingTime\"],\"sort\":[\"elapsed\",\"desc\"]},\"gridData\":{\"h\":13,\"i\":\"4\",\"w\":48,\"x\":0,\"y\":30},\"panelIndex\":\"4\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_3\"},{\"embeddableConfig\":{},\"gridData\":{\"h\":15,\"i\":\"5\",\"w\":24,\"x\":24,\"y\":15},\"panelIndex\":\"5\",\"version\":\"7.0.1\",\"panelRefName\":\"panel_4\"}]",
       "optionsJSON": "{\"hidePanelTitles\":false,\"useMargins\":true}",
       "version": 1,
       "timeRestore": false,
       "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"query\":{\"language\":\"kuery\",\"query\":\"group : \\\"/base\\\"\"},\"filter\":[]}"
+        "searchSourceJSON": "{\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"filter\":[]}"
       }
     },
     "_migrationVersion": {
@@ -41,7 +41,7 @@
       {
         "name": "panel_4",
         "type": "visualization",
-        "id": "5480a740-8e56-11e9-ac8e-35445c4dab80"
+        "id": "076550c0-8e7c-11e9-ac8e-35445c4dab80"
       }
     ]
   },
@@ -70,85 +70,6 @@
       "index-pattern": "6.5.0"
     },
     "_references": []
-  },
-  {
-    "_id": "95fd2d70-8de7-11e9-ac8e-35445c4dab80",
-    "_type": "search",
-    "_source": {
-      "title": "HTTP Transactions [Scouter] ",
-      "description": "",
-      "hits": 0,
-      "columns": [
-        "endTime",
-        "threadName",
-        "service",
-        "elapsed",
-        "group",
-        "apicallCount"
-      ],
-      "sort": [
-        "bucket_time",
-        "desc"
-      ],
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"kuery\",\"query\":\"\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
-      }
-    },
-    "_migrationVersion": {
-      "search": "7.0.0"
-    },
-    "_references": [
-      {
-        "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
-        "type": "index-pattern",
-        "id": "9fc396e0-8dc5-11e9-ac8e-35445c4dab80"
-      }
-    ]
-  },
-  {
-    "_id": "03eaffe0-8df4-11e9-ac8e-35445c4dab80",
-    "_type": "search",
-    "_source": {
-      "title": "HOST METRIC [Scouter]",
-      "description": "",
-      "hits": 0,
-      "columns": [
-        "objName",
-        "objHash",
-        "Cpu",
-        "SysCpu",
-        "UserCpu",
-        "DiskReadBytes",
-        "DiskWriteBytes",
-        "Mem",
-        "MemA",
-        "MemT",
-        "Swap",
-        "PageIn",
-        "PageOut",
-        "SwapU",
-        "SwapT"
-      ],
-      "sort": [
-        "bucket_time",
-        "desc"
-      ],
-      "version": 1,
-      "kibanaSavedObjectMeta": {
-        "searchSourceJSON": "{\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"kuery\",\"query\":\"objFamily : host\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
-      }
-    },
-    "_migrationVersion": {
-      "search": "7.0.0"
-    },
-    "_references": [
-      {
-        "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
-        "type": "index-pattern",
-        "id": "eab83900-8df0-11e9-ac8e-35445c4dab80"
-      }
-    ]
   },
   {
     "_id": "599224b0-8df3-11e9-ac8e-35445c4dab80",
@@ -183,6 +104,50 @@
       "version": 1,
       "kibanaSavedObjectMeta": {
         "searchSourceJSON": "{\"highlightAll\":true,\"version\":true,\"query\":{\"query\":\"objFamily : javaee\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
+      }
+    },
+    "_migrationVersion": {
+      "search": "7.0.0"
+    },
+    "_references": [
+      {
+        "name": "kibanaSavedObjectMeta.searchSourceJSON.index",
+        "type": "index-pattern",
+        "id": "eab83900-8df0-11e9-ac8e-35445c4dab80"
+      }
+    ]
+  },
+  {
+    "_id": "03eaffe0-8df4-11e9-ac8e-35445c4dab80",
+    "_type": "search",
+    "_source": {
+      "title": "HOST METRIC [Scouter]",
+      "description": "",
+      "hits": 0,
+      "columns": [
+        "objName",
+        "objHash",
+        "Cpu",
+        "SysCpu",
+        "UserCpu",
+        "DiskReadBytes",
+        "DiskWriteBytes",
+        "Mem",
+        "MemA",
+        "MemT",
+        "Swap",
+        "PageIn",
+        "PageOut",
+        "SwapU",
+        "SwapT"
+      ],
+      "sort": [
+        "bucket_time",
+        "desc"
+      ],
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"kuery\",\"query\":\"objFamily : host\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"
       }
     },
     "_migrationVersion": {
@@ -293,11 +258,11 @@
     "_references": []
   },
   {
-    "_id": "1011f8b0-8e4d-11e9-ac8e-35445c4dab80",
+    "_id": "5480a740-8e56-11e9-ac8e-35445c4dab80",
     "_type": "visualization",
     "_source": {
-      "title": "최근 사용자 비교 [Scouter]",
-      "visState": "{\"title\":\"최근 사용자 비교 [Scouter]\",\"type\":\"timelion\",\"params\":{\"expression\":\".es(index=scouter-counter*,timefield=bucket_time,metric=max:RecentUser,q=objFamily:javaee).label(현재-최대사용자),\\n.es(index=scouter-counter*,timefield=bucket_time,metric=max:RecentUser,q=objFamily:javaee,offset=-1d).label(전날-최대사용자).bars()\",\"interval\":\"auto\"},\"aggs\":[]}",
+      "title": "TPS [Scouter]",
+      "visState": "{\"title\":\"TPS [Scouter]\",\"type\":\"timelion\",\"params\":{\"expression\":\".es(index=scouter-counter*,timefield=bucket_time,metric=avg:ElapsedTime).label(응답시간).scale_interval(1m),\\n.es(index=scouter-counter*,timefield=bucket_time,metric=max:Cpu).label(CPU사용율).scale_interval(1m),\\n.es(index=scouter-xlog*,timefield=endTime,metric=count).label(TPS).scale_interval(1m),\",\"interval\":\"auto\"},\"aggs\":[]}",
       "uiStateJSON": "{}",
       "description": "",
       "version": 1,
@@ -311,11 +276,11 @@
     "_references": []
   },
   {
-    "_id": "5480a740-8e56-11e9-ac8e-35445c4dab80",
+    "_id": "1011f8b0-8e4d-11e9-ac8e-35445c4dab80",
     "_type": "visualization",
     "_source": {
-      "title": "TPS [Scouter]",
-      "visState": "{\"title\":\"TPS [Scouter]\",\"type\":\"timelion\",\"params\":{\"expression\":\".es(index=scouter-counter*,timefield=bucket_time,metric=avg:ElapsedTime).label(응답시간).scale_interval(1m),\\n.es(index=scouter-counter*,timefield=bucket_time,metric=max:Cpu).label(CPU사용율).scale_interval(1m),\\n.es(index=scouter-xlog*,timefield=endTime,metric=count).label(TPS).scale_interval(1m),\",\"interval\":\"auto\"},\"aggs\":[]}",
+      "title": "최근 사용자 비교 [Scouter]",
+      "visState": "{\"title\":\"최근 사용자 비교 [Scouter]\",\"type\":\"timelion\",\"params\":{\"expression\":\".es(index=scouter-counter*,timefield=bucket_time,metric=max:RecentUser,q=objFamily:javaee).label(현재-최대사용자),\\n.es(index=scouter-counter*,timefield=bucket_time,metric=max:RecentUser,q=objFamily:javaee,offset=-1d).label(전날-최대사용자).bars()\",\"interval\":\"auto\"},\"aggs\":[]}",
       "uiStateJSON": "{}",
       "description": "",
       "version": 1,
@@ -370,5 +335,23 @@
         "id": "601dab70-8df2-11e9-ac8e-35445c4dab80"
       }
     ]
+  },
+  {
+    "_id": "076550c0-8e7c-11e9-ac8e-35445c4dab80",
+    "_type": "visualization",
+    "_source": {
+      "title": "System Performance  [Scouter]",
+      "visState": "{\"title\":\"System Performance  [Scouter]\",\"type\":\"metrics\",\"params\":{\"id\":\"61ca57f0-469d-11e7-af02-69e470af7417\",\"type\":\"timeseries\",\"series\":[{\"id\":\"61ca57f1-469d-11e7-af02-69e470af7417\",\"color\":\"#68BC00\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"61ca57f2-469d-11e7-af02-69e470af7417\",\"type\":\"avg\",\"value\":\"-0.1\",\"field\":\"end_time_number\"},{\"unit\":\"1m\",\"id\":\"5df4c4a0-8e79-11e9-b81c-1508d2c294b8\",\"type\":\"derivative\",\"field\":\"61ca57f2-469d-11e7-af02-69e470af7417\"},{\"script\":\"params.a / 1000\",\"id\":\"7adef590-8e79-11e9-b81c-1508d2c294b8\",\"type\":\"math\",\"variables\":[{\"id\":\"8befdb10-8e79-11e9-b81c-1508d2c294b8\",\"field\":\"5df4c4a0-8e79-11e9-b81c-1508d2c294b8\",\"name\":\"a\"}]}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"bar\",\"line_width\":1,\"point_size\":1,\"fill\":0.5,\"stacked\":\"none\",\"terms_field\":\"objHash.keyword\",\"label\":\"대기 시간 /s \",\"value_template\":\"{{value}} \"},{\"id\":\"35a5e690-8e7a-11e9-b81c-1508d2c294b8\",\"color\":\"rgba(188,88,0,1)\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"35a5e691-8e7a-11e9-b81c-1508d2c294b8\",\"type\":\"count\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":\"1\",\"point_size\":\"4\",\"fill\":\"0\",\"stacked\":\"none\",\"steps\":0,\"label\":\"처리 건수 / count\"},{\"id\":\"beb41ce0-8e7a-11e9-b81c-1508d2c294b8\",\"color\":\"rgba(12,121,125,1)\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"beb41ce1-8e7a-11e9-b81c-1508d2c294b8\",\"type\":\"avg\",\"field\":\"elapsed\"},{\"script\":\"params.elaps / 1000\",\"id\":\"597b86a0-8e7b-11e9-b81c-1508d2c294b8\",\"type\":\"math\",\"variables\":[{\"id\":\"5bbbd9b0-8e7b-11e9-b81c-1508d2c294b8\",\"field\":\"beb41ce1-8e7a-11e9-b81c-1508d2c294b8\",\"name\":\"elaps\"}]}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":\"1\",\"point_size\":\"1\",\"fill\":\"0.5\",\"stacked\":\"none\",\"label\":\"평균응답시간 / s \"},{\"id\":\"96748110-8e7b-11e9-b81c-1508d2c294b8\",\"color\":\"rgba(123,100,255,1)\",\"split_mode\":\"everything\",\"metrics\":[{\"id\":\"96748111-8e7b-11e9-b81c-1508d2c294b8\",\"type\":\"avg\",\"field\":\"cpu\"}],\"separate_axis\":0,\"axis_position\":\"right\",\"formatter\":\"number\",\"chart_type\":\"line\",\"line_width\":1,\"point_size\":1,\"fill\":0.5,\"stacked\":\"none\",\"label\":\"CPU 사용율\",\"filter\":\"> 0\"}],\"time_field\":\"bucket_time\",\"index_pattern\":\"scouter-xlog*\",\"interval\":\"auto\",\"axis_position\":\"left\",\"axis_formatter\":\"number\",\"axis_scale\":\"normal\",\"show_legend\":1,\"show_grid\":1,\"default_index_pattern\":\"scouter-counter*\"},\"aggs\":[]}",
+      "uiStateJSON": "{}",
+      "description": "",
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[]}"
+      }
+    },
+    "_migrationVersion": {
+      "visualization": "7.0.1"
+    },
+    "_references": []
   }
 ]
