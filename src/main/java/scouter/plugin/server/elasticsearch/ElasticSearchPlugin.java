@@ -179,12 +179,12 @@ public class ElasticSearchPlugin {
         _source.put("gxid",Hexa32.toString32(p.gxid));
 
         _source.put("elapsed",p.elapsed);
-        _source.put("error",this.getString(helper.getHashMsgString(p.error)));
+        _source.put("error",p.error);
         _source.put("cpu",p.cpu);
         _source.put("sqlCount",p.sqlCount);
         _source.put("sqlTime",p.sqlTime);
         _source.put("ipaddr",this.ipByteToString(p.ipaddr));
-        _source.put("kbytes",p.kbytes);
+        _source.put("memory",p.kbytes);
         _source.put("userAgent",this.getString(helper.getUserAgentString(p.userAgent)));
         _source.put("referrer",this.getString(helper.getRefererString(p.referer)));
         _source.put("group",this.getString(helper.getUserGroupString(p.group)));
