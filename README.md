@@ -1,6 +1,8 @@
-# scouter-plugin-server-elasticsearch
+# Elastic Stack? 
+ - 아래 링크에서 키바나,엘라스틱 서치 간략한 개념과 설치 및 키바나에 사용법을 이해 하실 수 있습니다. 
+https://github.com/higee/elastic/blob/master/README.md
 
-                                              
+# scouter-plugin-server-elasticsearch                                              
 ![Korean](https://img.shields.io/badge/language-Korean-blue.svg)
 - Scouter Server Plugin으로 성능 counter 정보 와 XLOG 정보를 ElasticSearch 로 전송해 주는 plugin 이다.  
 
