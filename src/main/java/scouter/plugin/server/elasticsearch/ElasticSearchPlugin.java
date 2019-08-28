@@ -2,6 +2,7 @@ package scouter.plugin.server.elasticsearch;
 
 import scouter.lang.CountryCode;
 import scouter.lang.TimeTypeEnum;
+import scouter.lang.pack.ObjectPack;
 import scouter.lang.pack.PerfCounterPack;
 import scouter.lang.pack.XLogPack;
 import scouter.lang.plugin.PluginConstants;
@@ -15,6 +16,9 @@ import scouter.server.core.AgentManager;
 import scouter.server.plugin.PluginHelper;
 import scouter.util.*;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 /**
@@ -22,7 +26,8 @@ import java.util.*;
  */
 public class ElasticSearchPlugin {
 
-    private final HttpClient httpClient;
+
+
     Configure conf = Configure.getInstance();
 
     private static final String ext_plugin_es_enabled           = "ext_plugin_es_enabled";
@@ -49,23 +54,18 @@ public class ElasticSearchPlugin {
     String esUser                   = conf.getValue(ext_plugin_es_id, "");
     String esPassword               = conf.getValue(ext_plugin_es_password, "");
 
+    final DateTimeFormatter dateTimeFormatter;
+
     public ElasticSearchPlugin() {
 
-        this.httpClient = HttpClient.builder()
-                .address(esHttpAddress)
-                .user(esUser)
-                .password(esPassword)
-                .isHttps(esIsHttpSecure)
-                .build();
-
-        this.httpClient.init();
+        this.dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSSZ").withZone(ZoneId.systemDefault());
 
         Timer jobScheduler = new Timer(true);
 
         jobScheduler.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                httpClient.flush();
+
             }
         }, 1, DateTimeHelper.MILLIS_PER_SECOND);
 
@@ -73,12 +73,11 @@ public class ElasticSearchPlugin {
         deleteScheduler.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                httpClient.deleteIndex(Arrays.asList(esCouterIndexName,esXlogIndexName),esIndexDuration);
+
             }
         }, 1, DateTimeHelper.MILLIS_PER_DAY);
 
-        ConfObserver.put("ElasticPluginPlugin", new Runnable() {
-            public void run() {
+        ConfObserver.put("ElasticPluginPlugin", ()-> {
                 enabled                 = conf.getBoolean(ext_plugin_es_enabled, true);
                 esCouterIndexName       = conf.getValue(ext_plugin_es_counter_index, "scouter-counter");
                 esXlogIndexName         = conf.getValue(ext_plugin_es_xlog_index, "scouter-xlog");
@@ -87,13 +86,6 @@ public class ElasticSearchPlugin {
                 esHttpAddress           = conf.getValue(ext_plugin_es_cluster_address, "127.0.0.1:9200");
                 esUser                  = conf.getValue(ext_plugin_es_id, "");
                 esPassword              = conf.getValue(ext_plugin_es_password, "");
-
-                httpClient.setAddress(esHttpAddress);
-                httpClient.setHttps(esIsHttpSecure);
-                httpClient.setUser(esUser);
-                httpClient.setPassword(esPassword);
-                httpClient.reload();
-            }
         });
     }
 
@@ -111,16 +103,16 @@ public class ElasticSearchPlugin {
         try {
             String objName = pack.objName;
             int objHash = HashUtil.hash(objName);
-            String objType = AgentManager.getAgent(objHash).objType;
-            String objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(objType).getFamily().getName();
+            ObjectPack op= AgentManager.getAgent(objHash);
+            String objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(op.objType).getFamily().getName();
 
             Map<String, Value> dataMap = pack.data.toMap();
             Map<String,Object> _source = new LinkedHashMap<>();
 
-            _source.put("bucket_time",new Date(pack.time));
+            _source.put("bucket_time", this.dateTimeFormatter.format(new Date(pack.time).toInstant()));
+            _source.put("objName",op.objName);
             _source.put("objHash",Hexa32.toString32(objHash));
-            _source.put("objName",objName);
-            _source.put("objType",objType);
+            _source.put("objType",op.objType);
             _source.put("objFamily",objFamily);
 
             for (Map.Entry<String, Value> field : dataMap.entrySet()) {
@@ -140,14 +132,7 @@ public class ElasticSearchPlugin {
             }
 
             String _indexName = String.join("-",esCouterIndexName.toLowerCase(), DateUtil.format(System.currentTimeMillis(),"yyyy-MM-dd"));
-            final int _id = HashUtil.hash(String.join("",
-                                                            _indexName ,
-                                                            String.valueOf(objHash) ,
-                                                            String.valueOf(System.nanoTime())
-                                            ));
 
-
-            this.httpClient.put(_indexName,String.valueOf(_id),_source);
 
         } catch (Exception e) {
             if (conf._trace) {
@@ -165,31 +150,37 @@ public class ElasticSearchPlugin {
         }
 
         Map<String,Object> _source = new LinkedHashMap<>();
+        ObjectPack op= AgentManager.getAgent(p.objHash);
 
-        _source.put("bucket_time",new Date(p.endTime - p.elapsed));
-        _source.put("endTime",new Date(p.endTime));
-        _source.put("start_time_number",p.endTime - p.elapsed);
-        _source.put("end_time_number",p.endTime);
+        _source.put("objName",op.objName);
         _source.put("objHash",Hexa32.toString32(p.objHash));
+
+        _source.put("startTime",this.dateTimeFormatter.format(new Date(p.endTime - p.elapsed).toInstant()));
+        _source.put("endTime",this.dateTimeFormatter.format(new Date(p.endTime).toInstant()));
+
+        _source.put("startTimeEpoch",p.endTime - p.elapsed);
+        _source.put("endTimeEpoch",p.endTime);
+
+
         _source.put("service",this.getString(helper.getServiceString(p.service)));
         _source.put("threadName",this.getString(helper.getHashMsgString(p.threadNameHash)));
 
-        _source.put("txid",Hexa32.toString32(p.txid));
+        _source.put("txId",Hexa32.toString32(p.txid));
         _source.put("caller",Hexa32.toString32(p.caller));
-        _source.put("gxid",Hexa32.toString32(p.gxid));
+        _source.put("gxId",Hexa32.toString32(p.gxid));
 
         _source.put("elapsed",p.elapsed);
         _source.put("error",p.error);
         _source.put("cpu",p.cpu);
         _source.put("sqlCount",p.sqlCount);
         _source.put("sqlTime",p.sqlTime);
-        _source.put("ipaddr",this.ipByteToString(p.ipaddr));
+        _source.put("ipAddr",this.ipByteToString(p.ipaddr));
         _source.put("memory",p.kbytes);
         _source.put("userAgent",this.getString(helper.getUserAgentString(p.userAgent)));
         _source.put("referrer",this.getString(helper.getRefererString(p.referer)));
         _source.put("group",this.getString(helper.getUserGroupString(p.group)));
-        _source.put("apicallCount",p.apicallCount);
-        _source.put("apicallTime",p.apicallTime);
+        _source.put("apiCallCount",p.apicallCount);
+        _source.put("apiCallTime",p.apicallTime);
         _source.put("countryCode", this.getString(p.countryCode));
         _source.put("country", this.getString(CountryCode.getCountryName(this.getString(p.countryCode))));
         _source.put("city",this.getString(helper.getCityString(p.city)));
@@ -206,12 +197,7 @@ public class ElasticSearchPlugin {
         _source.put("queuing2ndTime",p.queuing2ndTime);
 
         String _indexName = String.join("-",esXlogIndexName, DateUtil.format(System.currentTimeMillis(),"yyyy-MM-dd"));
-        final int _id = HashUtil.hash(String.join("",
-                _indexName ,
-                String.valueOf(p.txid) ,
-                String.valueOf(System.nanoTime())
-        ));
-        this.httpClient.put(_indexName,String.valueOf(_id),_source);
+
 
     }
     private String getString(String value){
