@@ -3,8 +3,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>scouter.plugin.server</groupId>
-    <artifactId>scouter-plugin-server-elasticsearch</artifactId>
-    <version>7.0.1</version>
+    <artifactId>scouter-plugin-server-file</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <name>scouter-plugin-server-elasticsearch</name>
@@ -34,8 +34,13 @@
             <artifactId>lombok</artifactId>
             <version>1.18.8</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.10</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
-
     <build>
         <pluginManagement>
             <plugins>
