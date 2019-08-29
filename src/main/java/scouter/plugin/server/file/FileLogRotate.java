@@ -50,7 +50,7 @@ public class FileLogRotate {
          dataFile = new PrintWriter(new FileWriter(file,true));
     }
 
-    protected void rotate() throws FileNotFoundException {
+    protected void rotate() throws IOException {
         Calendar calendar= GregorianCalendar.getInstance();
         calendar.add(Calendar.DAY_OF_MONTH,-1);
         final String rotateDate =dateformatter.format(calendar.getTime().toInstant());
@@ -59,12 +59,10 @@ public class FileLogRotate {
         final File src = new File(this.fileName);
         final File dest = new File(String.join(File.separator,dir,rotateName));
         if (src.exists()) {
-
             final boolean isSuccess = src.renameTo(dest);
             if(isSuccess){
-                PrintWriter writer = new PrintWriter(src);
-                writer.print("");
-                writer.close();
+                this.dataFile.close();
+                this.create();
             }
         }
     }
