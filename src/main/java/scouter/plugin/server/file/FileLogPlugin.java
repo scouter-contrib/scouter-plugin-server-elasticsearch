@@ -19,6 +19,7 @@ import scouter.util.HashUtil;
 import scouter.util.Hexa32;
 import scouter.util.StringUtil;
 
+import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -27,7 +28,6 @@ import java.util.*;
  * @author Heo Yeo Song (yosong.heo@gmail.com) on 2019. 6. 13.
  */
 public class FileLogPlugin {
-
 
 
     Configure conf = Configure.getInstance();
@@ -44,13 +44,14 @@ public class FileLogPlugin {
 
 
 
-
+    private final FileLogRotate couterLogger;
     final PluginHelper helper;
     boolean enabled;                                              
     private String couterIndexName;
     private String xlogIndexName;
     private int counterDuration;
     private int xlogDuration;
+    FileLogRotate xlogLogger;
     String rootDir;
     String extension;
     
@@ -65,14 +66,25 @@ public class FileLogPlugin {
         this.enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
         this.couterIndexName    = conf.getValue(ext_plugin_fl_counter_index, "scouter-counter");
         this.xlogIndexName      = conf.getValue(ext_plugin_fl_xlog_index, "scouter-xlog");
-        this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 7);
+        this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
         this.xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
-        this.rootDir            = conf.getValue(ext_plugin_fl_rotate_dir, "ext_plugin_filelog");
+        this.rootDir            = conf.getValue(ext_plugin_fl_rotate_dir, "./ext_plugin_filelog");
         this.extension          = conf.getValue(ext_plugin_fl_extension, "json");
 
-        ConfObserver.put("FileLogPluginPlugin", ()-> {
+
+        this.couterLogger = new FileLogRotate(this.couterIndexName,this.extension,this.rootDir);
+        this.xlogLogger = new FileLogRotate(this.xlogIndexName,this.extension,this.rootDir);
+
+        try{
+            this.couterLogger.create();
+            this.xlogLogger.create();
+        }catch (IOException e){
+            Logger.printStackTrace("FileLoggingPluginError-",e);
+        }
+
+        ConfObserver.put("KRANIAN-FileLogPluginPlugin", ()-> {
             this.enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
-            this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 7);
+            this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
             this.xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
             this.extension          = conf.getValue(ext_plugin_fl_extension, "json");
         });
@@ -89,7 +101,7 @@ public class FileLogPlugin {
             return;
         }
 
-        try {
+
             String objName = pack.objName;
             int objHash = HashUtil.hash(objName);
             ObjectPack op= AgentManager.getAgent(objHash);
@@ -119,15 +131,11 @@ public class FileLogPlugin {
                 }
                 _source.put(key,value);
             }
+        try {
 
-
-
+            this.couterLogger.execute(_source);
         } catch (Exception e) {
-            if (conf._trace) {
-                Logger.printStackTrace("ES001", e);
-            } else {
-                Logger.println("ES002", e.getMessage());
-            }
+            Logger.printStackTrace("counter logging failed", e);
         }
     }
 
@@ -187,7 +195,11 @@ public class FileLogPlugin {
         _source.put("queuing2ndHostHash",this.getString(helper.getHashMsgString(p.queuingHostHash)));
         _source.put("queuing2ndTime",p.queuing2ndTime);
 
-
+        try {
+            this.xlogLogger.execute(_source);
+        }catch (IOException e){
+            Logger.printStackTrace("xlog logging failed",e);
+        }
 
     }
     private String getString(String value){
