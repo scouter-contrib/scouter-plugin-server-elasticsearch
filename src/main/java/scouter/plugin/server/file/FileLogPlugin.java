@@ -14,7 +14,6 @@ import scouter.server.CounterManager;
 import scouter.server.Logger;
 import scouter.server.core.AgentManager;
 import scouter.server.plugin.PluginHelper;
-import scouter.util.DateTimeHelper;
 import scouter.util.HashUtil;
 import scouter.util.Hexa32;
 import scouter.util.StringUtil;
@@ -23,6 +22,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Heo Yeo Song (yosong.heo@gmail.com) on 2019. 6. 13.
@@ -30,29 +30,29 @@ import java.util.*;
 public class FileLogPlugin {
 
 
-    Configure conf = Configure.getInstance();
 
+    Configure conf = Configure.getInstance();
     private static final String ext_plugin_fl_enabled               = "ext_plugin_fl_enabled";
     private static final String ext_plugin_fl_counter_index         = "ext_plugin_fl_counter_index";
     private static final String ext_plugin_fl_xlog_index            = "ext_plugin_fl_xlog_index";
     private static final String ext_plugin_fl_couter_duration_day   = "ext_plugin_fl_counter_duration_day";
     private static final String ext_plugin_fl_xlog_duration_day     = "ext_plugin_fl_xlog_duration_day";
-    private static final String ext_plugin_fl_rotate_dir            = "ext_plugin_fl_rotate_dir";
+    private static final String ext_plugin_fl_root_dir              = "ext_plugin_fl_root_dir";
+    private static final String ext_plugin_fl_move_rotate_dir       = "ext_plugin_fl_rotate_dir";
     private static final String ext_plugin_fl_extension             = "ext_plugin_fl_extension";
 
 
 
-
-
-    private final FileLogRotate couterLogger;
+    final Map<String,FileLogRotate> couterMagement;
     final PluginHelper helper;
     boolean enabled;                                              
-    private String couterIndexName;
-    private String xlogIndexName;
-    private int counterDuration;
-    private int xlogDuration;
+    String couterIndexName;
+    String xlogIndexName;
+    int counterDuration;
+    int xlogDuration;
     FileLogRotate xlogLogger;
     String rootDir;
+    String moveDir;
     String extension;
     
     final DateTimeFormatter dateTimeFormatter;
@@ -61,38 +61,52 @@ public class FileLogPlugin {
 
     public FileLogPlugin() {
 
-        this.dateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSSZ").withZone(ZoneId.systemDefault());
+        this.dateTimeFormatter  = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss.SSSZ").withZone(ZoneId.systemDefault());
         this.helper             = PluginHelper.getInstance();
         this.enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
         this.couterIndexName    = conf.getValue(ext_plugin_fl_counter_index, "scouter-counter");
         this.xlogIndexName      = conf.getValue(ext_plugin_fl_xlog_index, "scouter-xlog");
         this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
         this.xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
-        this.rootDir            = conf.getValue(ext_plugin_fl_rotate_dir, "./ext_plugin_filelog");
+        this.rootDir            = conf.getValue(ext_plugin_fl_root_dir, "./ext_plugin_filelog");
+        this.moveDir            = conf.getValue(ext_plugin_fl_move_rotate_dir, "./ext_plugin_filelog/rotate");
         this.extension          = conf.getValue(ext_plugin_fl_extension, "json");
 
+        this.couterMagement     = new ConcurrentHashMap<>();
+        this.xlogLogger         = new FileLogRotate(this.xlogIndexName,this.extension,this.rootDir,this.moveDir);
+        this.xlogLogger.create();
 
-        this.couterLogger = new FileLogRotate(this.couterIndexName,this.extension,this.rootDir);
-        this.xlogLogger = new FileLogRotate(this.xlogIndexName,this.extension,this.rootDir);
 
-        try{
-            this.couterLogger.create();
-            this.xlogLogger.create();
-        }catch (IOException e){
-            Logger.printStackTrace("FileLoggingPluginError-",e);
-        }
+        //- 스케줄 정의
+        final Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY,24);
+        calendar.set(Calendar.MINUTE,0);
+        final Date schStartTime= new Date(calendar.getTimeInMillis());
+        new FileScheduler(this.moveDir
+                ,this.couterIndexName
+                ,"filerotate-scheduler-counter"
+                ,schStartTime
+                ,counterDuration,dateTimeFormatter
+        ).start();
+        new FileScheduler(this.moveDir
+                ,this.xlogIndexName
+                ,"filerotate-scheduler-xlog"
+                ,schStartTime
+                ,xlogDuration
+                ,dateTimeFormatter
+        ).start();
 
-        ConfObserver.put("KRANIAN-FileLogPluginPlugin", ()-> {
-            this.enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
-            this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
-            this.xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
-            this.extension          = conf.getValue(ext_plugin_fl_extension, "json");
+        ConfObserver.put("Orange-ServerPluginFileLogPlugin", ()-> {
+            enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
+            Logger.println("ServerPluginFileLogPlugin Enabled Result : " + enabled);
+
         });
     }
 
 
     @ServerPlugin(PluginConstants.PLUGIN_SERVER_COUNTER)
     public void counter(final PerfCounterPack pack) {
+
         if (!enabled) {
             return;
         }
@@ -101,42 +115,55 @@ public class FileLogPlugin {
             return;
         }
 
+        String objName = pack.objName;
+        int objHash = HashUtil.hash(objName);
+        ObjectPack op= AgentManager.getAgent(objHash);
+        String objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(op.objType).getFamily().getName();
 
-            String objName = pack.objName;
-            int objHash = HashUtil.hash(objName);
-            ObjectPack op= AgentManager.getAgent(objHash);
-            String objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(op.objType).getFamily().getName();
+        Map<String, Value> dataMap = pack.data.toMap();
+        Map<String,Object> _source = new LinkedHashMap<>();
 
-            Map<String, Value> dataMap = pack.data.toMap();
-            Map<String,Object> _source = new LinkedHashMap<>();
+        _source.put("startTime", this.dateTimeFormatter.format(new Date(pack.time).toInstant()));
+        _source.put("objName",op.objName);
+        _source.put("objHash",Hexa32.toString32(objHash));
+        _source.put("objType",op.objType);
+        _source.put("objFamily",objFamily);
 
-            _source.put("bucket_time", this.dateTimeFormatter.format(new Date(pack.time).toInstant()));
-            _source.put("objName",op.objName);
-            _source.put("objHash",Hexa32.toString32(objHash));
-            _source.put("objType",op.objType);
-            _source.put("objFamily",objFamily);
-
-            for (Map.Entry<String, Value> field : dataMap.entrySet()) {
-                Value valueOrigin = field.getValue();
-                if (Objects.isNull(valueOrigin)) {
-                    continue;
-                }
-                Object value = valueOrigin.toJavaObject();
-                if(!(value instanceof Number)) {
-                    continue;
-                }
-                String key = field.getKey();
-                if(Objects.equals("time",key) || Objects.equals("objHash",key)) {
-                    continue;
-                }
-                _source.put(key,value);
+        for (Map.Entry<String, Value> field : dataMap.entrySet()) {
+            Value valueOrigin = field.getValue();
+            if (Objects.isNull(valueOrigin)) {
+                continue;
             }
+            Object value = valueOrigin.toJavaObject();
+            if(!(value instanceof Number)) {
+                continue;
+            }
+            String key = field.getKey();
+            if(Objects.equals("time",key) || Objects.equals("objHash",key)) {
+                continue;
+            }
+            _source.put(key,value);
+        }
         try {
-
-            this.couterLogger.execute(_source);
+            this.getCounterLogger(objFamily).execute(_source);
         } catch (Exception e) {
             Logger.printStackTrace("counter logging failed", e);
         }
+    }
+    private FileLogRotate getCounterLogger(String objFamily) {
+        return Optional.ofNullable(this.couterMagement.get(objFamily))
+                       .orElseGet(()->{
+                           FileLogRotate fileLogRotate=  new FileLogRotate(
+                                                            String.join("-",this.couterIndexName,objFamily)
+                                                            , this.extension
+                                                            , this.rootDir
+                                                            , this.moveDir);
+                           if(fileLogRotate.create()){
+                             this.couterMagement.put(objFamily,fileLogRotate);
+                           }
+                           return fileLogRotate;
+                       });
+
     }
 
     @ServerPlugin(PluginConstants.PLUGIN_SERVER_XLOG)
@@ -158,12 +185,12 @@ public class FileLogPlugin {
         _source.put("endTimeEpoch",p.endTime);
 
 
-        _source.put("service",this.getString(helper.getServiceString(p.service)));
+        _source.put("serviceName",this.getString(helper.getServiceString(p.service)));
         _source.put("threadName",this.getString(helper.getHashMsgString(p.threadNameHash)));
 
+        _source.put("gxId",Hexa32.toString32(p.gxid));
         _source.put("txId",Hexa32.toString32(p.txid));
         _source.put("caller",Hexa32.toString32(p.caller));
-        _source.put("gxId",Hexa32.toString32(p.gxid));
 
         _source.put("elapsed",p.elapsed);
         _source.put("error",p.error);
@@ -171,7 +198,7 @@ public class FileLogPlugin {
         _source.put("sqlCount",p.sqlCount);
         _source.put("sqlTime",p.sqlTime);
         _source.put("ipAddr",this.ipByteToString(p.ipaddr));
-        _source.put("memory",p.kbytes);
+        _source.put("allocMemory",p.kbytes);
         _source.put("userAgent",this.getString(helper.getUserAgentString(p.userAgent)));
         _source.put("referrer",this.getString(helper.getRefererString(p.referer)));
         _source.put("group",this.getString(helper.getUserGroupString(p.group)));
