@@ -1,22 +1,22 @@
 package scouter.plugin.server.file;
 
+import lombok.Setter;
 import scouter.server.Logger;
+import scouter.util.DateUtil;
 
 import java.io.File;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+@Setter
 public class FileScheduler {
 
     private final String rootDir;
     private final String patternName;
     private final Date startDate;
     private final String name;
-    private final int duration;
+    private int duration;
     private final DateTimeFormatter dateTimeFormater;
 
     public FileScheduler(String rootDir, String patternName, String name, Date startDate, int duration, DateTimeFormatter dateTimeFormatter){
@@ -35,19 +35,25 @@ public class FileScheduler {
             @Override
             public void run() {
                 try {
-                    Logger.println("file scheduler start. target="+patternName);
+                    Calendar calendar= GregorianCalendar.getInstance();
+                    calendar.add(Calendar.DAY_OF_MONTH,duration > 0 ? duration *-1 : duration);
+                    final long deleteTimeStd = calendar.getTimeInMillis();
+                    final String stdFormatTime = DateUtil.format(deleteTimeStd,"yyyy-MM-dd HH:mm:ss");
+                    Logger.println("FL-001","file scheduler start. target="+patternName + ", delete time std = " + stdFormatTime);
                     Arrays.stream(new File(rootDir).listFiles())
                           .filter(f -> {
                               final String p = String.join("",
-                                      "^",patternName,".+?"
-                                      ,dateTimeFormater.format(new Date().toInstant()));
-                              return f.getName().matches(p);
+                                      "^",patternName,".+?");
+                              return f.getName().matches(p) && f.lastModified() < deleteTimeStd ;
+                          })
+                          .peek(f->{
+                              Logger.println("FL-002","will delete file counter log : "+ f.getAbsolutePath());
                           })
                           .forEach(f ->f.delete());
                 }catch (Throwable e){
                     Logger.printStackTrace(e);
                 }
             }
-        },this.startDate, TimeUnit.DAYS.toMillis(this.duration));
+        },this.startDate, TimeUnit.DAYS.toMillis(1));
     }
 }

@@ -42,6 +42,8 @@ public class FileLogPlugin {
     private static final String ext_plugin_fl_extension             = "ext_plugin_fl_extension";
 
 
+    private final FileScheduler countefileScheduler;
+    private final FileScheduler xlogFileScheduler;
 
     final Map<String,FileLogRotate> couterMagement;
     final PluginHelper helper;
@@ -82,24 +84,31 @@ public class FileLogPlugin {
         calendar.set(Calendar.HOUR_OF_DAY,24);
         calendar.set(Calendar.MINUTE,0);
         final Date schStartTime= new Date(calendar.getTimeInMillis());
-        new FileScheduler(this.moveDir
-                ,this.couterIndexName
-                ,"filerotate-scheduler-counter"
-                ,schStartTime
-                ,counterDuration,dateTimeFormatter
-        ).start();
-        new FileScheduler(this.moveDir
+        this.countefileScheduler = new FileScheduler(this.moveDir
+                , this.couterIndexName
+                , "filerotate-scheduler-counter"
+                , schStartTime
+                , counterDuration, dateTimeFormatter
+        );
+        this.countefileScheduler.start();
+
+        this.xlogFileScheduler = new FileScheduler(this.moveDir
                 ,this.xlogIndexName
                 ,"filerotate-scheduler-xlog"
                 ,schStartTime
                 ,xlogDuration
                 ,dateTimeFormatter
-        ).start();
+        );
+        this.xlogFileScheduler.start();
 
         ConfObserver.put("Orange-ServerPluginFileLogPlugin", ()-> {
             enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
-            Logger.println("ServerPluginFileLogPlugin Enabled Result : " + enabled);
+            counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
+            xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
 
+            countefileScheduler.setDuration(counterDuration);
+            xlogFileScheduler.setDuration(xlogDuration);
+            Logger.println("ServerPluginFileLogPlugin Enabled Result : " + enabled);
         });
     }
 

@@ -49,14 +49,19 @@ public class TestFileLogRotate {
         final Date date = new Date(calendar.getTimeInMillis());
         System.out.println(DateUtil.format(date.getTime(),"yyyy-MM-dd HH:mm:ss"));
 
+        Calendar cal = GregorianCalendar.getInstance();
+        cal.add(Calendar.DAY_OF_MONTH,-1);
+        System.out.println(DateUtil.yyyymmdd(cal.getTimeInMillis()));
+        System.out.println(TimeUnit.DAYS.toMillis(1));
     }
+
     @Test
     public void testPattern(){
         final Pattern compile = Pattern.compile("scouter-counter");
-        final String find = "scouter-counter-2019-08-30";
+        final String find = "scouter1-counter-java2ee-2019-08-30";
 
 //        Assert.assertEquals("pom.xml", name);
-        Assert.assertEquals(true,find.matches("^scouter-counter.+?2019-08-30"));
+        Assert.assertEquals(true,find.matches("^scouter-counter.+?"));
 
     }
 }
