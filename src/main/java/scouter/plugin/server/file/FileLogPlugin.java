@@ -128,12 +128,11 @@ public class FileLogPlugin {
             String objName = pack.objName;
             int objHash    = HashUtil.hash(objName);
             ObjectPack op  = AgentManager.getAgent(objHash);
-
-            Optional<ObjectType> objectType = Optional.ofNullable(CounterManager.getInstance().getCounterEngine().getObjectType(op.objType));
-            if(!objectType.isPresent()){
+            if(Objects.isNull(op)){
                 return;
             }
-            String objFamily = objectType.get().getFamily().getName();
+            ObjectType objectType = CounterManager.getInstance().getCounterEngine().getObjectType(op.objType);
+            String objFamily = objectType.getFamily().getName();
 
             Map<String, Value> dataMap = pack.data.toMap();
             Map<String,Object> _source = new LinkedHashMap<>();
@@ -186,41 +185,45 @@ public class FileLogPlugin {
             return;
         }
         try {
-        Map<String,Object> _source = new LinkedHashMap<>();
-        ObjectPack op= AgentManager.getAgent(p.objHash);
+            Map<String,Object> _source = new LinkedHashMap<>();
+            ObjectPack op= AgentManager.getAgent(p.objHash);
 
-        _source.put("objName",op.objName);
-        _source.put("objHash",Hexa32.toString32(p.objHash));
-        _source.put("objType","tracing");
-        _source.put("objFamily","javaee");
+            if(Objects.isNull(op)){
+                return;
+            }
 
-        _source.put("startTime",this.dateTimeFormatter.format(new Date(p.endTime - p.elapsed).toInstant()));
-        _source.put("endTime",this.dateTimeFormatter.format(new Date(p.endTime).toInstant()));
+            _source.put("objName",op.objName);
+            _source.put("objHash",Hexa32.toString32(p.objHash));
+            _source.put("objType","tracing");
+            _source.put("objFamily","javaee");
 
-        _source.put("startTimeEpoch",p.endTime - p.elapsed);
-        _source.put("endTimeEpoch",p.endTime);
+            _source.put("startTime",this.dateTimeFormatter.format(new Date(p.endTime - p.elapsed).toInstant()));
+            _source.put("endTime",this.dateTimeFormatter.format(new Date(p.endTime).toInstant()));
+
+            _source.put("startTimeEpoch",p.endTime - p.elapsed);
+            _source.put("endTimeEpoch",p.endTime);
 
 
-        _source.put("serviceName",this.getString(helper.getServiceString(p.service)));
-        _source.put("threadName",this.getString(helper.getHashMsgString(p.threadNameHash)));
+            _source.put("serviceName",this.getString(helper.getServiceString(p.service)));
+            _source.put("threadName",this.getString(helper.getHashMsgString(p.threadNameHash)));
 
-        _source.put("gxId",Hexa32.toString32(p.gxid));
-        _source.put("txId",Hexa32.toString32(p.txid));
-        _source.put("caller",Hexa32.toString32(p.caller));
+            _source.put("gxId",Hexa32.toString32(p.gxid));
+            _source.put("txId",Hexa32.toString32(p.txid));
+            _source.put("caller",Hexa32.toString32(p.caller));
 
-        _source.put("elapsed",p.elapsed);
-        _source.put("error",p.error);
-        _source.put("cpu",p.cpu);
-        _source.put("sqlCount",p.sqlCount);
-        _source.put("sqlTime",p.sqlTime);
-        _source.put("ipAddr",this.ipByteToString(p.ipaddr));
-        _source.put("allocMemory",p.kbytes);
-        _source.put("userAgent",this.getString(helper.getUserAgentString(p.userAgent)));
-        _source.put("referrer",this.getString(helper.getRefererString(p.referer)));
-        _source.put("group",this.getString(helper.getUserGroupString(p.group)));
+            _source.put("elapsed",p.elapsed);
+            _source.put("error",p.error);
+            _source.put("cpu",p.cpu);
+            _source.put("sqlCount",p.sqlCount);
+            _source.put("sqlTime",p.sqlTime);
+            _source.put("ipAddr",this.ipByteToString(p.ipaddr));
+            _source.put("allocMemory",p.kbytes);
+            _source.put("userAgent",this.getString(helper.getUserAgentString(p.userAgent)));
+            _source.put("referrer",this.getString(helper.getRefererString(p.referer)));
+            _source.put("group",this.getString(helper.getUserGroupString(p.group)));
 
-        _source.put("apiCallCount",p.apicallCount);
-        _source.put("apiCallTime",p.apicallTime);
+            _source.put("apiCallCount",p.apicallCount);
+            _source.put("apiCallTime",p.apicallTime);
 
 //        _source.put("countryCode", this.getString(p.countryCode));
 //        _source.put("country", this.getString(CountryCode.getCountryName(this.getString(p.countryCode))));
