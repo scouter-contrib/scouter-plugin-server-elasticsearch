@@ -1,6 +1,5 @@
 package scouter.plugin.server.file;
 
-import scouter.lang.CountryCode;
 import scouter.lang.ObjectType;
 import scouter.lang.TimeTypeEnum;
 import scouter.lang.pack.ObjectPack;
@@ -19,7 +18,6 @@ import scouter.util.HashUtil;
 import scouter.util.Hexa32;
 import scouter.util.StringUtil;
 
-import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -36,7 +34,7 @@ public class FileLogPlugin {
     private static final String ext_plugin_fl_enabled               = "ext_plugin_fl_enabled";
     private static final String ext_plugin_fl_counter_index         = "ext_plugin_fl_counter_index";
     private static final String ext_plugin_fl_xlog_index            = "ext_plugin_fl_xlog_index";
-    private static final String ext_plugin_fl_couter_duration_day   = "ext_plugin_fl_counter_duration_day";
+    private static final String ext_plugin_fl_counter_duration_day  = "ext_plugin_fl_counter_duration_day";
     private static final String ext_plugin_fl_xlog_duration_day     = "ext_plugin_fl_xlog_duration_day";
     private static final String ext_plugin_fl_root_dir              = "ext_plugin_fl_root_dir";
     private static final String ext_plugin_fl_move_rotate_dir       = "ext_plugin_fl_rotate_dir";
@@ -69,7 +67,7 @@ public class FileLogPlugin {
         this.enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
         this.couterIndexName    = conf.getValue(ext_plugin_fl_counter_index, "scouter-counter");
         this.xlogIndexName      = conf.getValue(ext_plugin_fl_xlog_index, "scouter-xlog");
-        this.counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
+        this.counterDuration    = conf.getInt(ext_plugin_fl_counter_duration_day, 3);
         this.xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
         this.rootDir            = conf.getValue(ext_plugin_fl_root_dir, "./ext_plugin_filelog");
         this.moveDir            = conf.getValue(ext_plugin_fl_move_rotate_dir, "./ext_plugin_filelog/rotate");
@@ -104,7 +102,7 @@ public class FileLogPlugin {
 
         ConfObserver.put("Orange-ServerPluginFileLogPlugin", ()-> {
             enabled            = conf.getBoolean(ext_plugin_fl_enabled, true);
-            counterDuration    = conf.getInt(ext_plugin_fl_couter_duration_day, 3);
+            counterDuration    = conf.getInt(ext_plugin_fl_counter_duration_day, 3);
             xlogDuration       = conf.getInt(ext_plugin_fl_xlog_duration_day, 3);
 
             countefileScheduler.setDuration(counterDuration);
