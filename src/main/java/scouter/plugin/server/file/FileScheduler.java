@@ -26,6 +26,8 @@ public class FileScheduler {
         this.name = name;
         this.duration = duration;
         this.dateTimeFormater = dateTimeFormatter;
+        final String stdFormatTime = DateUtil.format(startDate.getTime(),"yyyy-MM-dd HH:mm:ss");
+        Logger.println("FL-SCH1","First Start Time Info " + stdFormatTime);
     }
 
 
@@ -39,7 +41,7 @@ public class FileScheduler {
                     calendar.add(Calendar.DAY_OF_MONTH,duration > 0 ? duration *-1 : duration);
                     final long deleteTimeStd = calendar.getTimeInMillis();
                     final String stdFormatTime = DateUtil.format(deleteTimeStd,"yyyy-MM-dd HH:mm:ss");
-                    Logger.println("FL-001","file scheduler start. target="+patternName + ", delete time std = " + stdFormatTime);
+                    Logger.println("FL-SCH2","file scheduler start. target="+patternName + ", delete time std = " + stdFormatTime);
                     Arrays.stream(new File(rootDir).listFiles())
                           .filter(f -> {
                               final String p = String.join("",
@@ -47,7 +49,7 @@ public class FileScheduler {
                               return f.getName().matches(p) && f.lastModified() < deleteTimeStd ;
                           })
                           .peek(f->{
-                              Logger.println("FL-002","will delete file counter log : "+ f.getAbsolutePath());
+                              Logger.println("FL-SCH3","will delete file counter log : "+ f.getAbsolutePath());
                           })
                           .forEach(f ->f.delete());
                 }catch (Throwable e){

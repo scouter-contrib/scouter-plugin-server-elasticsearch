@@ -1,6 +1,7 @@
 package scouter.plugin.server.file;
 
 import scouter.lang.CountryCode;
+import scouter.lang.ObjectType;
 import scouter.lang.TimeTypeEnum;
 import scouter.lang.pack.ObjectPack;
 import scouter.lang.pack.PerfCounterPack;
@@ -123,37 +124,41 @@ public class FileLogPlugin {
         if(pack.timetype != TimeTypeEnum.REALTIME) {
             return;
         }
-
-        String objName = pack.objName;
-        int objHash = HashUtil.hash(objName);
-        ObjectPack op= AgentManager.getAgent(objHash);
-        String objFamily = CounterManager.getInstance().getCounterEngine().getObjectType(op.objType).getFamily().getName();
-
-        Map<String, Value> dataMap = pack.data.toMap();
-        Map<String,Object> _source = new LinkedHashMap<>();
-
-        _source.put("startTime", this.dateTimeFormatter.format(new Date(pack.time).toInstant()));
-        _source.put("objName",op.objName);
-        _source.put("objHash",Hexa32.toString32(objHash));
-        _source.put("objType",op.objType);
-        _source.put("objFamily",objFamily);
-
-        for (Map.Entry<String, Value> field : dataMap.entrySet()) {
-            Value valueOrigin = field.getValue();
-            if (Objects.isNull(valueOrigin)) {
-                continue;
-            }
-            Object value = valueOrigin.toJavaObject();
-            if(!(value instanceof Number)) {
-                continue;
-            }
-            String key = field.getKey();
-            if(Objects.equals("time",key) || Objects.equals("objHash",key)) {
-                continue;
-            }
-            _source.put(key,value);
-        }
         try {
+            String objName = pack.objName;
+            int objHash    = HashUtil.hash(objName);
+            ObjectPack op  = AgentManager.getAgent(objHash);
+
+            Optional<ObjectType> objectType = Optional.ofNullable(CounterManager.getInstance().getCounterEngine().getObjectType(op.objType));
+            if(!objectType.isPresent()){
+                return;
+            }
+            String objFamily = objectType.get().getFamily().getName();
+
+            Map<String, Value> dataMap = pack.data.toMap();
+            Map<String,Object> _source = new LinkedHashMap<>();
+            _source.put("startTime", this.dateTimeFormatter.format(new Date(pack.time).toInstant()));
+            _source.put("objName",op.objName);
+            _source.put("objHash",Hexa32.toString32(objHash));
+            _source.put("objType",op.objType);
+            _source.put("objFamily",objFamily);
+
+            for (Map.Entry<String, Value> field : dataMap.entrySet()) {
+                Value valueOrigin = field.getValue();
+                if (Objects.isNull(valueOrigin)) {
+                    continue;
+                }
+                Object value = valueOrigin.toJavaObject();
+                if(!(value instanceof Number)) {
+                    continue;
+                }
+                String key = field.getKey();
+                if(Objects.equals("time",key) || Objects.equals("objHash",key)) {
+                    continue;
+                }
+                _source.put(key,value);
+            }
+
             this.getCounterLogger(objFamily).execute(_source);
         } catch (Exception e) {
             Logger.printStackTrace("counter logging failed", e);
@@ -180,7 +185,7 @@ public class FileLogPlugin {
         if (!enabled) {
             return;
         }
-
+        try {
         Map<String,Object> _source = new LinkedHashMap<>();
         ObjectPack op= AgentManager.getAgent(p.objHash);
 
@@ -217,25 +222,25 @@ public class FileLogPlugin {
         _source.put("apiCallCount",p.apicallCount);
         _source.put("apiCallTime",p.apicallTime);
 
-        _source.put("countryCode", this.getString(p.countryCode));
-        _source.put("country", this.getString(CountryCode.getCountryName(this.getString(p.countryCode))));
-        _source.put("city",this.getString(helper.getCityString(p.city)));
-        _source.put("login",this.getString(helper.getLoginString(p.login)));
-        _source.put("desc",this.getString(helper.getDescString(p.desc)));
+//        _source.put("countryCode", this.getString(p.countryCode));
+//        _source.put("country", this.getString(CountryCode.getCountryName(this.getString(p.countryCode))));
+//        _source.put("city",this.getString(helper.getCityString(p.city)));
+//        _source.put("login",this.getString(helper.getLoginString(p.login)));
+//        _source.put("desc",this.getString(helper.getDescString(p.desc)));
+//
+//        _source.put("text1",this.getString(p.text1));
+//        _source.put("text2",this.getString(p.text2));
+//        _source.put("text3",this.getString(p.text3));
+//        _source.put("text4",this.getString(p.text4));
+//        _source.put("text5",this.getString(p.text5));
+//        _source.put("queuingHostHash",this.getString(helper.getHashMsgString(p.queuingHostHash)));
+//        _source.put("queuingTime",p.queuingTime);
+//        _source.put("queuing2ndHostHash",this.getString(helper.getHashMsgString(p.queuingHostHash)));
+//        _source.put("queuing2ndTime",p.queuing2ndTime);
 
-        _source.put("text1",this.getString(p.text1));
-        _source.put("text2",this.getString(p.text2));
-        _source.put("text3",this.getString(p.text3));
-        _source.put("text4",this.getString(p.text4));
-        _source.put("text5",this.getString(p.text5));
-        _source.put("queuingHostHash",this.getString(helper.getHashMsgString(p.queuingHostHash)));
-        _source.put("queuingTime",p.queuingTime);
-        _source.put("queuing2ndHostHash",this.getString(helper.getHashMsgString(p.queuingHostHash)));
-        _source.put("queuing2ndTime",p.queuing2ndTime);
 
-        try {
             this.xlogLogger.execute(_source);
-        }catch (IOException e){
+        }catch (Exception e){
             Logger.printStackTrace("xlog logging failed",e);
         }
 
